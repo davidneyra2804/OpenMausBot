@@ -37,12 +37,14 @@ async function until<T>(check: () => T | Promise<T>, timeoutMs: number): Promise
 }
 
 let botId = "";
+let main = "";
 let routineId = "";
 let runId = "";
 try {
   say({ step: "fixture", ...fixture.info });
   const { bot } = await control(["new-bot", "--name", "Pepper"]);
   botId = bot.id;
+  main = bot.activeTaskId as string;
   say({ step: "bot", botId });
   const created = await api("POST", "/api/routines", {
     name: NAME, prompt: "Check the invoices and tell me what needs me.", botId, enabled: false,
@@ -74,7 +76,11 @@ try {
     error: run.error === expected,
   };
   say({ step: "checks", checks, expectedError: expected });
-  const evidence = { fixture: fixture.info, botId, routineId, runId, expectedError: expected, report: REPORT, run, checks };
+  const waited = await control(["wait", "--bot", botId, "--timeout", "30"]).catch((error: unknown) => ({ error: String(error) }));
+  say({ step: "wait", waited });
+  const messages = await control(["messages", "--bot", botId, "--task", main, "--limit", "20"]).catch((error: unknown) => ({ error: String(error) }));
+  say({ step: "messages", messages });
+  const evidence = { fixture: fixture.info, botId, routineId, runId, expectedError: expected, report: REPORT, run, checks, waited, messages };
   const evidencePath = `${fixture.info.logPath}.routine-limits.json`;
   writeFileSync(evidencePath, JSON.stringify(evidence, null, 2));
   try {
