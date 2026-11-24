@@ -1,0 +1,24 @@
+name: Probe write permission
+
+on:
+  push:
+    branches:
+      - feat/es-locale-complete
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write and push a probe file
+        run: |
+          git config user.name "cybor"
+          git config user.email "cybor@users.noreply.github.com"
+          mkdir -p tmp
+          printf 'ok\n' > tmp/probe.txt
+          git add tmp/probe.txt
+          git commit -m "chore: probe write"
+          git push origin HEAD:feat/es-locale-complete
